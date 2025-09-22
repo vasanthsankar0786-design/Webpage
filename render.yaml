@@ -2,13 +2,10 @@ services:
   - type: web
     name: timesheet-app
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
-        value: 3.13.4
-      - key: PORT
-        value: 8000
-    healthCheckPath: /
-    autoDeploy: true
-    plan: free
+        value: 3.12.4 # Using a stable, common version
