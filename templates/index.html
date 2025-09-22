@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Editable CSV Table</title>
+<style>
+    /* Page background */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #ff9a9e, #fad0c4, #a18cd1);
+        min-height: 100vh;
+        padding: 40px 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    /* Container for table */
+    .container {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        max-width: 1000px;
+        width: 90%;
+    }
+
+    /* Heading */
+    h2 {
+        text-align: center;
+        color: #4a148c;
+        margin-bottom: 25px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* Table styling */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        text-align: left;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        min-width: 100px;
+        transition: background 0.3s;
+    }
+    th {
+        background: linear-gradient(to right, #667eea, #764ba2);
+        color: white;
+    }
+    tr:nth-child(even) td {
+        background-color: #f3e5f5;
+    }
+    tr:hover td {
+        background-color: #e1bee7;
+    }
+    td:focus {
+        outline: 2px solid #7b1fa2;
+        background-color: #f3e5f5;
+    }
+
+    /* Buttons */
+    .btn {
+        margin: 5px;
+        padding: 10px 20px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: white;
+        transition: transform 0.2s;
+    }
+    .btn:hover {
+        transform: scale(1.05);
+    }
+    .btn-save { background: linear-gradient(to right, #667eea, #764ba2); }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Editable CSV Data</h2>
+    <table id="dataTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <div style="text-align:center; margin-top: 20px;">
+        <button class="btn btn-save" onclick="saveData()">Save Changes</button>
+    </div>
+</div>
+
+<script>
+async function loadData() {
+    const res = await fetch("/get-data");
+    const data = await res.json();
+
+    const tableHead = document.getElementById("tableHead");
+    const tableBody = document.getElementById("tableBody");
+    tableHead.innerHTML = "";
+    tableBody.innerHTML = "";
+
+    // Header
+    const headerRow = document.createElement("tr");
+    Object.keys(data[0]).forEach(col => {
+        const th = document.createElement("th");
+        th.innerText = col;
+        headerRow.appendChild(th);
+    });
+    tableHead.appendChild(headerRow);
+
+    // Body
+    data.forEach((row) => {
+        const tr = document.createElement("tr");
+        Object.values(row).forEach((val) => {
+            const td = document.createElement("td");
+            td.contentEditable = true;
+            td.innerText = val;
+            tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+    });
+}
+
+async function saveData() {
+    const table = document.getElementById("dataTable");
+    const headers = Array.from(table.querySelectorAll("th")).map(th => th.innerText);
+    const data = Array.from(table.querySelectorAll("tbody tr")).map(tr => {
+        const row = {};
+        Array.from(tr.querySelectorAll("td")).forEach((td, i) => {
+            row[headers[i]] = td.innerText;
+        });
+        return row;
+    });
+
+    const res = await fetch("/save-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if(result.status === "success") alert("CSV saved successfully!");
+    else alert("Error saving CSV.");
+}
+
+window.onload = loadData;
+</script>
+</body>
+</html>
